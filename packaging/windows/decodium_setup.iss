@@ -2,13 +2,13 @@
 ; Pensato per essere pilotato sia localmente sia da GitHub Actions.
 
 #ifndef AppName
-  #define AppName "Decodium"
+  #define AppName "Decodium CX8ANM"
 #endif
 #ifndef AppVersion
   #error AppVersion must be supplied from fork_release_version.txt
 #endif
 #ifndef AppPublisher
-  #define AppPublisher "IU8LMC"
+  #define AppPublisher "CX8ANM - Cóndor Tecnológico (basado en Decodium de IU8LMC / 9H1SR)"
 #endif
 #ifndef AppExeName
   #define AppExeName "decodium.exe"
@@ -27,12 +27,12 @@
 #endif
 
 [Setup]
-AppId={{D3C0D1A4-4000-4A10-8C64-6F7C3A6F4000}
+AppId={{A7E2C4B9-5D31-4F86-9E0C-C8A5D0CC8A00}
 AppName={#AppName}
 AppVersion={#AppVersion}
 AppVerName={#AppName} {#AppVersion}
 AppPublisher={#AppPublisher}
-AppPublisherURL=https://github.com/iu8lmc/Decodium-4.0-Core-Shannon
+AppPublisherURL=https://github.com/condoruy/Decodium-CX8ANM
 DefaultDirName={autopf}\{#AppName}
 DefaultGroupName={#AppName}
 AllowNoIcons=yes
@@ -367,7 +367,7 @@ Source: "{#SourceRoot}\third_party\com0com\*"; DestDir: "{app}\com0com"; Flags: 
 
 [Icons]
 Name: "{group}\{#AppName}";              Filename: "{app}\{#AppExeName}"; IconFilename: "{app}\{#AppExeName}"
-Name: "{group}\Disinstalla {#AppName}";  Filename: "{uninstallexe}"
+Name: "{group}\Desinstalar {#AppName}";  Filename: "{uninstallexe}"
 ; Decodium RX: ricevitore FT8/FT4/FT2 da terminale (solo RX), come su DecodiumOS.
 Name: "{group}\Decodium RX (terminale)"; Filename: "{app}\decodium-rx.exe"; WorkingDir: "{app}"; IconFilename: "{app}\{#AppExeName}"; Comment: "Ricezione FT8, FT4 e FT2 da terminale, solo RX"
 Name: "{autodesktop}\{#AppName}";        Filename: "{app}\{#AppExeName}"; IconFilename: "{app}\{#AppExeName}"; Tasks: desktopicon

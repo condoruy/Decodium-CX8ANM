@@ -130,7 +130,7 @@ GlassApplicationWindow {
     readonly property string dxpeditionModeLabel: !bridge || bridge.mode !== "FT8" ? ""
         : bridge.houndMode ? (superFoxOptionEnabled ? "SuperHound" : "Hound")
         : bridge.foxMode ? (superFoxOptionEnabled ? "SuperFox" : "Fox") : ""
-    title: "Decodium 4.0 — " + (bridge ? bridge.mode : "")
+    title: "Decodium 4.0 · CX8ANM — " + (bridge ? bridge.mode : "")
         + (dxpeditionModeLabel ? " [" + dxpeditionModeLabel + "]" : "")
         + " — " + (bridge ? bridge.callsign : "")
     property bool windowStateRestoreInProgress: true

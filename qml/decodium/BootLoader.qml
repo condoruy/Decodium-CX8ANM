@@ -19,7 +19,7 @@ GlassApplicationWindow {
     minimumHeight: 500
     x: centeredBootX()
     y: centeredBootY()
-    title: qsTr("Decodium 4.0 — Loading...")
+    title: "Decodium 4.0 · CX8ANM — Cargando..."
     // The splash is a real top-level Decodium window too.  Keep it on the
     // same Liquid Glass path so users never see an opaque intermediate window
     // during startup.

@@ -1,0 +1,106 @@
+# Suite CX8ANM - instalador conjunto (Decodium CX8ANM + DecoDXLog CX8ANM)
+#
+# No compila nada: toma el último instalador ya compilado de cada repositorio
+# y los junta en un solo Suite_CX8ANM_<version>_Setup_x64.exe.
+#
+# Antes de correrlo:
+#   1. En este repo: Actions > "Build Windows x64" > Run workflow (y que termine bien).
+#   2. En condoruy/DecoDXLog-CX8ANM: Actions > "Release Windows (manual MinGW)" > Run workflow.
+#   3. Secreto SUITE_TOKEN en este repo: token de GitHub (fine-grained) con acceso
+#      de solo lectura a "Actions" y "Contents" de los dos repositorios.
+#
+# El resultado queda como artefacto privado de la ejecución (no se publica).
+name: Suite CX8ANM (Windows)
+
+on:
+  workflow_dispatch:
+    inputs:
+      suite_version:
+        description: Versión de la suite (vacío = fecha de hoy)
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  suite:
+    runs-on: windows-2022
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Descargar instaladores compilados
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.SUITE_TOKEN }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if (-not $env:GH_TOKEN) { throw "Falta el secreto SUITE_TOKEN (ver comentario al inicio del workflow)" }
+          New-Item -ItemType Directory -Force -Path in\decodium, in\decodxlog | Out-Null
+
+          function Get-LastArtifact($repo, $workflow, $pattern, $dest) {
+            $run = gh run list -R $repo --workflow $workflow --status success --limit 1 --json databaseId --jq '.[0].databaseId'
+            if (-not $run) { throw "No hay ninguna ejecución exitosa de '$workflow' en $repo" }
+            Write-Host "$repo -> run $run"
+            gh run download $run -R $repo --pattern $pattern --dir $dest
+            if ($LASTEXITCODE -ne 0) { throw "No se pudo descargar el artefacto de $repo" }
+          }
+
+          Get-LastArtifact '${{ github.repository_owner }}/Decodium-CX8ANM' 'build-windows-x64.yml' 'decodium-windows-x64-installer' 'in\decodium'
+          Get-LastArtifact '${{ github.repository_owner }}/DecoDXLog-CX8ANM' 'release-windows.yml' 'DecoDXLog-*-windows-x64-MinGW-test' 'in\decodxlog'
+
+          $dec = Get-ChildItem in\decodium -Recurse -Filter *.exe | Select-Object -First 1
+          $log = Get-ChildItem in\decodxlog -Recurse -Filter *setup.exe | Select-Object -First 1
+          if (-not $dec) { throw "No se encontró el instalador de Decodium" }
+          if (-not $log) { throw "No se encontró el instalador de DecoDXLog" }
+          "DECODIUM_SETUP=$($dec.FullName)"  | Out-File -Append $env:GITHUB_ENV
+          "DECODXLOG_SETUP=$($log.FullName)" | Out-File -Append $env:GITHUB_ENV
+          Write-Host "Decodium:  $($dec.Name)"
+          Write-Host "DecoDXLog: $($log.Name)"
+
+      - name: Inno Setup
+        shell: pwsh
+        run: |
+          if (-not (Test-Path 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe')) { choco install innosetup --no-progress -y }
+
+      - name: Armar Suite CX8ANM
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $ver = '${{ inputs.suite_version }}'
+          if (-not $ver) { $ver = Get-Date -Format 'yyyy.MM.dd' }
+          New-Item -ItemType Directory -Force -Path suite-output | Out-Null
+          & 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe' `
+            "/DSuiteVersion=$ver" `
+            "/DDecodiumSetup=$env:DECODIUM_SETUP" `
+            "/DDecoDXLogSetup=$env:DECODXLOG_SETUP" `
+            "/DSourceRoot=$env:GITHUB_WORKSPACE" `
+            "/DOutputDir=$env:GITHUB_WORKSPACE\suite-output" `
+            "$env:GITHUB_WORKSPACE\packaging\suite\suite_cx8anm.iss"
+          if ($LASTEXITCODE -ne 0) { throw "ISCC falló" }
+          Get-ChildItem suite-output
+
+      - name: Probar instalación silenciosa
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $setup = Get-ChildItem suite-output -Filter *.exe | Select-Object -First 1
+          $p = Start-Process -FilePath $setup.FullName -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-') -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "La suite falló con código $($p.ExitCode)" }
+          $dec = Join-Path $env:LOCALAPPDATA 'Programs\Decodium CX8ANM\decodium.exe'
+          $log = Join-Path $env:LOCALAPPDATA 'Programs\DecoDXLog CX8ANM\DecoDXLog.exe'
+          Write-Host "Decodium:  $(Test-Path $dec)  $dec"
+          Write-Host "DecoDXLog: $(Test-Path $log)  $log"
+          if (-not (Test-Path $dec)) { throw "Decodium no quedó instalado" }
+          if (-not (Test-Path $log)) { throw "DecoDXLog no quedó instalado" }
+
+      - name: Subir Suite CX8ANM (artefacto privado)
+        uses: actions/upload-artifact@v6
+        with:
+          name: Suite-CX8ANM-windows-x64
+          path: suite-output/*.exe
+          if-no-files-found: error

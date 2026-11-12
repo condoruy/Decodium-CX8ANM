@@ -3443,6 +3443,9 @@ int main(int argc, char* argv[])
     if (languageOverride.isEmpty()) {
         languageOverride = rootSettings.value(QStringLiteral("UILanguage")).toString().trimmed();
     }
+    if (languageOverride.isEmpty()) {
+        languageOverride = QStringLiteral("es");  // CX8ANM: espanol por defecto
+    }
     if (languageOverride.startsWith(QStringLiteral("en_"), Qt::CaseInsensitive)
         || languageOverride.startsWith(QStringLiteral("en-"), Qt::CaseInsensitive)) {
         languageOverride = QStringLiteral("en");

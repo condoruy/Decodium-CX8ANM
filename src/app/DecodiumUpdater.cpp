@@ -182,6 +182,12 @@ void DecodiumUpdater::checkOnStartupIfDue()
 
 void DecodiumUpdater::check(bool silent)
 {
+    // Edicion CX8ANM: sin actualizador automatico, para que no se instale la
+    // version oficial encima de esta. Las nuevas versiones se compilan en el
+    // repositorio condoruy/Decodium-CX8ANM.
+    Q_UNUSED(silent);
+    setStatus(QStringLiteral("Actualizaciones automáticas desactivadas en la edición CX8ANM"));
+    return;
     if (m_offlineMode) {
         setStatus(tr("Update checks paused by Decodium Offline mode"));
         return;

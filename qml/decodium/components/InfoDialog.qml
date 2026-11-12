@@ -297,6 +297,26 @@ Dialog {
                                 font.pixelSize: 11
                                 color: textSecondary
                             }
+
+                            Item { height: 5 }
+
+                            Text {
+                                Layout.alignment: Qt.AlignHCenter
+                                text: "Edición CX8ANM · Cóndor Tecnológico · Uruguay"
+                                font.pixelSize: 12
+                                font.bold: true
+                                color: secondaryCyan
+                            }
+
+                            Text {
+                                Layout.alignment: Qt.AlignHCenter
+                                Layout.preferredWidth: 400
+                                horizontalAlignment: Text.AlignHCenter
+                                wrapMode: Text.Wrap
+                                text: "Versión personalizada por Daniel Niño CX8ANM, basada en Decodium de IU8LMC y 9H1SR (GPL-3.0)."
+                                font.pixelSize: 11
+                                color: textSecondary
+                            }
                         }
                     }
 
