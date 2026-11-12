@@ -43,18 +43,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # Edicion CX8ANM: una sola variante Intel (macOS 14 Sonoma o superior)
+        # para ahorrar minutos de Mac en el repo privado.
         include:
-          - runner: macos-26-intel
-            compat_macos: "13.0"
-            asset_suffix: "macos-ventura-x86_64"
-            source_deps: true
           - runner: macos-26-intel
             compat_macos: "14.0"
             asset_suffix: "macos-sonoma-x86_64"
-            source_deps: false
-          - runner: macos-26-intel
-            compat_macos: "15.0"
-            asset_suffix: "macos-sequoia-x86_64"
             source_deps: false
 
     steps:

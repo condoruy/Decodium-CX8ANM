@@ -1,0 +1,92 @@
+# Suite CX8ANM - imagen de disco conjunta para Mac Intel
+# (Decodium CX8ANM + DecoDXLog CX8ANM en un solo .dmg)
+#
+# No compila nada: toma el último .dmg compilado de cada repositorio.
+# Antes de correrlo:
+#   1. En este repo: Actions > "Release macOS Intel Qt 6.11" > Run workflow.
+#   2. En condoruy/DecoDXLog-CX8ANM: Actions > "Release macOS" > Run workflow (arch x86_64).
+#   3. Secreto SUITE_TOKEN (el mismo que usa la suite de Windows).
+name: Suite CX8ANM (macOS Intel)
+
+on:
+  workflow_dispatch:
+    inputs:
+      suite_version:
+        description: Versión de la suite (vacío = fecha de hoy)
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  suite:
+    runs-on: macos-15-intel
+    timeout-minutes: 20
+    steps:
+      - name: Descargar los .dmg compilados
+        env:
+          GH_TOKEN: ${{ secrets.SUITE_TOKEN }}
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          set -euo pipefail
+          test -n "$GH_TOKEN" || { echo "Falta el secreto SUITE_TOKEN"; exit 1; }
+          mkdir -p in/decodium in/decodxlog
+          last_run() {
+            gh run list -R "$1" --workflow "$2" --status success --limit 1 --json databaseId --jq '.[0].databaseId'
+          }
+          run=$(last_run "$OWNER/Decodium-CX8ANM" release-macos-intel.yml)
+          test -n "$run" || { echo "No hay compilación Mac exitosa de Decodium"; exit 1; }
+          gh run download "$run" -R "$OWNER/Decodium-CX8ANM" --pattern 'decodium4-ft2-*-macos-*' --dir in/decodium
+          run=$(last_run "$OWNER/DecoDXLog-CX8ANM" release-macos.yml)
+          test -n "$run" || { echo "No hay compilación Mac exitosa de DecoDXLog"; exit 1; }
+          gh run download "$run" -R "$OWNER/DecoDXLog-CX8ANM" --pattern 'DecoDXLog-macos-*' --dir in/decodxlog
+          find in -name '*.dmg'
+
+      - name: Armar Suite CX8ANM.dmg
+        run: |
+          set -euo pipefail
+          ver="${{ inputs.suite_version }}"
+          [ -n "$ver" ] || ver="$(date +%Y.%m.%d)"
+          stage="$RUNNER_TEMP/Suite CX8ANM"
+          mkdir -p "$stage" out
+          for dmg in $(find in -name '*.dmg'); do
+            mnt="$(mktemp -d)"
+            hdiutil attach "$dmg" -nobrowse -readonly -mountpoint "$mnt"
+            for app in "$mnt"/*.app; do
+              name="$(basename "$app" .app)"
+              case "$name" in
+                *[Dd]ecodium*) dest="Decodium CX8ANM.app" ;;
+                *DecoDXLog*)   dest="DecoDXLog CX8ANM.app" ;;
+                *)             dest="$name.app" ;;
+              esac
+              ditto "$app" "$stage/$dest"
+            done
+            hdiutil detach "$mnt"
+          done
+          ls "$stage"
+          test -d "$stage/Decodium CX8ANM.app"
+          test -d "$stage/DecoDXLog CX8ANM.app"
+          ln -s /Applications "$stage/Aplicaciones"
+          cat > "$stage/LEEME.txt" <<TXT
+          Suite CX8ANM $ver - Cóndor Tecnológico
+
+          1. Arrastrá las dos apps a la carpeta Aplicaciones.
+          2. La primera vez, abrilas con clic derecho > Abrir (no tienen firma de Apple).
+             Si macOS igual no las deja abrir, en Terminal:
+               xattr -dr com.apple.quarantine "/Applications/Decodium CX8ANM.app" "/Applications/DecoDXLog CX8ANM.app"
+
+          Versión personalizada basada en Decodium (IU8LMC / 9H1SR) y DecoDXLog (IU8LMC).
+          Licencia GPL-3.0.
+          TXT
+          hdiutil create -volname "Suite CX8ANM $ver" -srcfolder "$stage" -ov -format UDZO "out/Suite_CX8ANM_${ver}_macOS_Intel.dmg"
+          ls -la out
+
+      - name: Subir Suite CX8ANM (artefacto privado)
+        uses: actions/upload-artifact@v6
+        with:
+          name: Suite-CX8ANM-macos-intel
+          path: out/*.dmg
+          if-no-files-found: error
