@@ -1,61 +1,8 @@
 name: Test Runner
 
+# Edicion CX8ANM: solo manual (repo privado, ahorro de minutos).
 on:
   workflow_dispatch:
-  pull_request:
-    paths:
-      - 'lib/ft2link/**'
-      - 'controllers/FT2Link*'
-      - 'tests/test_ft2link*'
-      - 'Detector/JT4Decoder.*'
-      - 'Detector/LegacyJtDecodeWorker.*'
-      - 'Modulator/FtxMessageEncoder.*'
-      - 'Modulator/FtxWaveformGenerator.*'
-      - 'tests/test_jt4_roundtrip.cpp'
-      - 'src/rtl/**'
-      - 'tests/test_rtlsdr*'
-      - 'Transceiver/**'
-      - 'src/radio/**'
-      - 'src/net/DecodiumSerialPortRegistry.*'
-      - 'src/cw/**'
-      - 'qml/decodium/components/SettingsDialog.qml'
-      - 'qml/decodium/components/SettingsTab1.qml'
-      - 'CMake/Modules/FindRtlSdr.cmake'
-      - 'CMakeLists.txt'
-      - 'CMake/templates/**'
-      - 'packaging/**'
-      - 'resources/runtime/**'
-      - 'scripts/ci/**'
-      - 'fork_release_version.txt'
-      - 'doc/GITHUB_RELEASE_BODY_*.md'
-      - '.github/workflows/test-runner.yml'
-  push:
-    paths:
-      - 'lib/ft2link/**'
-      - 'controllers/FT2Link*'
-      - 'tests/test_ft2link*'
-      - 'Detector/JT4Decoder.*'
-      - 'Detector/LegacyJtDecodeWorker.*'
-      - 'Modulator/FtxMessageEncoder.*'
-      - 'Modulator/FtxWaveformGenerator.*'
-      - 'tests/test_jt4_roundtrip.cpp'
-      - 'src/rtl/**'
-      - 'tests/test_rtlsdr*'
-      - 'Transceiver/**'
-      - 'src/radio/**'
-      - 'src/net/DecodiumSerialPortRegistry.*'
-      - 'src/cw/**'
-      - 'qml/decodium/components/SettingsDialog.qml'
-      - 'qml/decodium/components/SettingsTab1.qml'
-      - 'CMake/Modules/FindRtlSdr.cmake'
-      - 'CMakeLists.txt'
-      - 'CMake/templates/**'
-      - 'packaging/**'
-      - 'resources/runtime/**'
-      - 'scripts/ci/**'
-      - 'fork_release_version.txt'
-      - 'doc/GITHUB_RELEASE_BODY_*.md'
-      - '.github/workflows/test-runner.yml'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

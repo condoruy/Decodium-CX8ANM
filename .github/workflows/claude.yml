@@ -13,15 +13,9 @@ name: Decodium Agent
 # ottiene con "claude setup-token" ed e' legato all'abbonamento di chi lo
 # genera. In alternativa si userebbe anthropic_api_key, a consumo.
 
+# Edicion CX8ANM: solo manual (repo privado, ahorro de minutos).
 on:
-  issue_comment:
-    types: [created]
-  pull_request_review_comment:
-    types: [created]
-  pull_request_review:
-    types: [submitted]
-  issues:
-    types: [opened]
+  workflow_dispatch:
 
 # Una sola esecuzione per segnalazione: evita che una raffica di commenti
 # avvii dieci runner in parallelo.

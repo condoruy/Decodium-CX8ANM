@@ -1,12 +1,8 @@
 name: Build HRD Probe Windows
 
+# Edicion CX8ANM: solo manual (repo privado, ahorro de minutos).
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - "tools/hrd_probe.py"
-      - "tools/hrd_tap.py"
-      - ".github/workflows/build-hrd-probe-windows.yml"
 
 permissions:
   contents: read
