@@ -280,7 +280,13 @@ jobs:
             "https://github.com/Hamlib/Hamlib/releases/download/${HAMLIB_TAG}/hamlib-${HAMLIB_VERSION}.tar.gz"
           tar -xzf "hamlib-${HAMLIB_VERSION}.tar.gz"
           cd "hamlib-${HAMLIB_VERSION}"
-          ./configure --prefix="${HAMLIB_PREFIX}" --disable-static --enable-shared
+          # Edicion CX8ANM: el GCC actual de MSYS2 trata la falta de <assert.h>
+          # en precise_time.c como error; se agrega el include que falta.
+          if [ -f lib/precise_time.c ] && ! grep -q '<assert.h>' lib/precise_time.c; then
+            sed -i 's|#include <windows.h>|#include <windows.h>\n#include <assert.h>|' lib/precise_time.c
+          fi
+          ./configure --prefix="${HAMLIB_PREFIX}" --disable-static --enable-shared \
+            CFLAGS="-O2 -Wno-error=implicit-function-declaration"
           make -j"$(nproc)"
           make install
 
