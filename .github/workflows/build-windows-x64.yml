@@ -28,7 +28,91 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Edicion CX8ANM: Qt se arma en su propio job (hasta ~6 h) y queda en caché
+  # aunque la compilación de Decodium falle o se corte despues.
+  qt-windows:
+    runs-on: windows-2022
+    timeout-minutes: 350
+
+    defaults:
+      run:
+        shell: msys2 {0}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          cache: true
+          install: >-
+            curl
+            git
+            make
+            perl
+            python
+            tar
+            gperf
+            mingw-w64-x86_64-toolchain
+            mingw-w64-x86_64-cmake
+            mingw-w64-x86_64-ninja
+            mingw-w64-x86_64-pkgconf
+            mingw-w64-x86_64-boost
+            mingw-w64-x86_64-fftw
+            mingw-w64-x86_64-portaudio
+            mingw-w64-x86_64-openjpeg2
+            mingw-w64-x86_64-openssl
+
+      - name: Restore Qt 6.11 cache
+        id: qt-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ env.QT_CACHE_ROOT }}
+          key: windows-mingw64-qt-${{ env.QT_VERSION }}-v1
+
+      - name: Build Qt 6.11.0 MinGW from source
+        if: steps.qt-cache.outputs.cache-hit != 'true'
+        shell: msys2 {0}
+        run: |
+          set -euo pipefail
+          QT_PREFIX_WIN="$(cygpath -w "${GITHUB_WORKSPACE}/${QT_CACHE_ROOT}/${QT_VERSION}/mingw_64")"
+          QT_PREFIX="$(cygpath -u "${QT_PREFIX_WIN}")"
+          # RUNNER_TEMP is a Windows path (for example D:\\a\\_temp) and
+          # must not be passed directly to MSYS2 tar as an archive path.
+          QT_SOURCE_ARCHIVE="/tmp/qt-everywhere-src-${QT_VERSION}.tar.xz"
+          QT_SOURCE_DIR="/tmp/qt-everywhere-src-${QT_VERSION}"
+
+          rm -rf "${QT_SOURCE_DIR}" "${QT_PREFIX}"
+          curl -fsSL --retry 3 "${QT_SOURCE_URL}" -o "${QT_SOURCE_ARCHIVE}"
+          mkdir -p /tmp
+          tar -xf "${QT_SOURCE_ARCHIVE}" -C /tmp
+          cd "${QT_SOURCE_DIR}"
+          ./configure \
+            -prefix "${QT_PREFIX_WIN}" \
+            -release \
+            -opensource \
+            -confirm-license \
+            -nomake tests \
+            -nomake examples \
+            -submodules qtbase,qt5compat,qtdeclarative,qtimageformats,qtmultimedia,qtserialport,qtsvg,qtshadertools,qttools,qttranslations,qtwebsockets
+          cmake --build . --parallel "$(nproc)"
+          cmake --install .
+
+      - name: Save Qt 6.11 cache
+        if: steps.qt-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ env.QT_CACHE_ROOT }}
+          key: windows-mingw64-qt-${{ env.QT_VERSION }}-v1
+
+
   build-windows-x64:
+    needs: qt-windows
     runs-on: windows-2022
     timeout-minutes: 240
 
