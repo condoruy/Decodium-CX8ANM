@@ -49,7 +49,11 @@ jobs:
           - runner: macos-26-intel
             compat_macos: "14.0"
             asset_suffix: "macos-sonoma-x86_64"
-            source_deps: false
+            # Edicion CX8ANM: Homebrew ya no publica binarios para Mac Intel
+            # (desde 09/2026) y compilaba boost/cmake/icu desde cero en cada
+            # corrida. Con source_deps se arman solo las librerias necesarias
+            # y quedan en cache.
+            source_deps: true
 
     steps:
       - name: Checkout repository
@@ -68,16 +72,29 @@ jobs:
       - name: Install build dependencies
         env:
           HOMEBREW_NO_INSTALL_UPGRADE: "1"
+          HOMEBREW_NO_AUTO_UPDATE: "1"
+          HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: "1"
         run: |
           set -euo pipefail
-          brew update
-          packages=(cmake pkg-config create-dmg dylibbundler)
+          # Edicion CX8ANM: sin "brew update" (forzaba recompilar cmake desde cero)
+          # y solo se instala lo que falta en la imagen.
+          packages=()
+          for tool in cmake pkg-config create-dmg dylibbundler; do
+            command -v "$tool" >/dev/null 2>&1 || packages+=("$tool")
+          done
           if [[ "${{ matrix.source_deps }}" == "true" ]]; then
             packages+=(autoconf automake libtool)
           else
             packages+=(fftw libusb boost openjpeg)
           fi
-          brew install "${packages[@]}"
+          missing=()
+          for pkg in "${packages[@]}"; do
+            case "$pkg" in
+              autoconf|automake|libtool) command -v "${pkg/libtool/glibtool}" >/dev/null 2>&1 || missing+=("$pkg") ;;
+              *) missing+=("$pkg") ;;
+            esac
+          done
+          if (( ${#missing[@]} )); then brew install "${missing[@]}"; fi
 
           # The Intel image already provides GCC. Do not upgrade it to an
           # unbottled release: that can spend hours rebuilding the toolchain.
